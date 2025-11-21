@@ -40,6 +40,7 @@ class PlayerListScreen extends ConsumerWidget {
                         ],
                       ),
                     );
+
                     if (ok == true) {
                       ref.read(playersProvider.notifier).clear();
                     }
@@ -55,7 +56,9 @@ class PlayerListScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             Expanded(
               child: players.isEmpty
-                  ? const Center(child: Text('Nenhum jogador adicionado.'))
+                  ? const Center(
+                      child: Text('Nenhum jogador adicionado.'),
+                    )
                   : ListView.builder(
                       itemCount: players.length,
                       itemBuilder: (ctx, i) {
@@ -73,7 +76,6 @@ class PlayerListScreen extends ConsumerWidget {
                     onPressed: players.length < 2
                         ? null
                         : () {
-                            // default 2 times — você pode flexibilizar
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => TeamScreen(teamCount: 2),
@@ -96,18 +98,32 @@ class PlayerListScreen extends ConsumerWidget {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Minimo $v jogadores para $v times'),
+                          content: Text(
+                            'Minimo $v jogadores para $v times',
+                          ),
                         ),
                       );
                     }
                   },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(value: 2, child: Text('2 Times')),
-                    const PopupMenuItem(value: 3, child: Text('3 Times')),
-                    const PopupMenuItem(value: 4, child: Text('4 Times')),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 2,
+                      child: Text('2 Times'),
+                    ),
+                    PopupMenuItem(
+                      value: 3,
+                      child: Text('3 Times'),
+                    ),
+                    PopupMenuItem(
+                      value: 4,
+                      child: Text('4 Times'),
+                    ),
                   ],
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     child: Icon(Icons.more_vert),
                   ),
                 ),

@@ -2,9 +2,11 @@ import '../../player/data/player_model.dart';
 import 'dart:math';
 
 class TeamBalancer {
-  /// Gera `teamCount` times tentando:
-  /// 1) distribuir jogadores de cada nível entre os times (quando possível)
-  /// 2) depois ajustar trocas para reduzir diferença de pontuação
+  /// Algoritmo final:
+  /// - Times com máximo de 6 jogadores
+  /// - Usuário escolhe quantos times quer
+  /// - Excedente vai para "jogadores de fora" SEM criar time extra
+  /// - Balanceamento inteligente (score + quantidade)
   static List<List<Player>> makeBalancedTeams(
     List<Player> players,
     int teamCount,
@@ -12,64 +14,87 @@ class TeamBalancer {
     if (teamCount <= 0) throw ArgumentError('teamCount must be >= 1');
     if (players.isEmpty) return List.generate(teamCount, (_) => []);
 
-    // Agrupa por nível
-    final Map<int, List<Player>> porNivel = {};
-    for (var p in players) {
-      porNivel.putIfAbsent(p.level, () => []).add(p);
-    }
-
-    // Inicializa teams
     final teams = List.generate(teamCount, (_) => <Player>[]);
+    final outside = <Player>[];
     final rand = Random();
 
-    // Etapa 1: para cada nível, embaralha e distribui round-robin
-    for (var entry in porNivel.entries) {
-      final list = List<Player>.from(entry.value);
-      list.shuffle(rand);
-      for (int i = 0; i < list.length; i++) {
-        teams[i % teamCount].add(list[i]);
+    // Embaralha para evitar times sempre iguais
+    final shuffled = List<Player>.from(players)..shuffle(rand);
+
+    // ----------------------------------------------------------
+    // ETAPA 1 — DISTRIBUIR GARANTINDO LIMITE DE 6 POR TIME
+    // ----------------------------------------------------------
+    for (var player in shuffled) {
+      teams.sort((a, b) => a.length.compareTo(b.length));
+
+      // Se todos já têm 6 → vai para fora
+      if (teams.first.length >= 6) {
+        outside.add(player);
+      } else {
+        teams.first.add(player);
       }
     }
 
-    // Etapa 2: se ainda houver desequilíbrio grande, tenta trocas
-    _balanceByScore(teams);
+    // ----------------------------------------------------------
+    // ETAPA 2 — BALANCEAMENTO DE NÍVEL + QUANTIDADE
+    // Sem ultrapassar o limite definido
+    // ----------------------------------------------------------
+    _balanceWithLimits(teams, maxSize: 6);
 
-    // Etapa 3: por estética, embaralha times (mantendo equilíbrio)
-    teams.shuffle(rand);
-    return teams;
+    return [...teams, outside];
   }
 
-  static void _balanceByScore(List<List<Player>> teams) {
+  /// Balanceamento por troca entre o time mais forte e mais fraco.
+  /// Mantém limite máximo e não deixa time ficar com menos de 1 jogador.
+  static void _balanceWithLimits(
+    List<List<Player>> teams, {
+    required int maxSize,
+  }) {
     bool improved = true;
     int attempts = 0;
-    while (improved && attempts < 200) {
+
+    while (improved && attempts < 300) {
       attempts++;
+
       final scores =
           teams.map((t) => t.fold<int>(0, (s, p) => s + p.level)).toList();
-      final maxScore = scores.reduce((a, b) => a > b ? a : b);
-      final minScore = scores.reduce((a, b) => a < b ? a : b);
+
+      int maxScore = scores.reduce(max);
+      int minScore = scores.reduce(min);
+
       if (maxScore - minScore <= 1) break;
 
-      final idxMax = scores.indexOf(maxScore);
-      final idxMin = scores.indexOf(minScore);
+      final strongIndex = scores.indexOf(maxScore);
+      final weakIndex = scores.indexOf(minScore);
+
+      final strong = teams[strongIndex];
+      final weak = teams[weakIndex];
+
       bool swapped = false;
 
-      // tenta encontrar a troca que reduz mais a diferença
-      for (var a in List<Player>.from(teams[idxMax])) {
-        for (var b in List<Player>.from(teams[idxMin])) {
-          final newMax = maxScore - a.level + b.level;
-          final newMin = minScore - b.level + a.level;
-          if ((newMax - newMin).abs() < (maxScore - minScore)) {
-            teams[idxMax].remove(a);
-            teams[idxMin].remove(b);
-            teams[idxMax].add(b);
-            teams[idxMin].add(a);
+      for (var a in List<Player>.from(strong)) {
+        for (var b in List<Player>.from(weak)) {
+          if (weak.length >= maxSize) continue;
+          if (strong.length <= 1) continue;
+
+          final newStrongScore = maxScore - a.level + b.level;
+          final newWeakScore = minScore - b.level + a.level;
+
+          bool improves = (newStrongScore - newWeakScore).abs() <
+              (maxScore - minScore).abs();
+
+          if (improves) {
+            strong.remove(a);
+            weak.remove(b);
+            strong.add(b);
+            weak.add(a);
             swapped = true;
             break;
           }
         }
         if (swapped) break;
       }
+
       if (!swapped) improved = false;
     }
   }
