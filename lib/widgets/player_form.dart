@@ -70,7 +70,6 @@ class _PlayerFormState extends ConsumerState<PlayerForm> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    value: _level,
                     dropdownColor: const Color(0xFF1E1B2E),
                     iconEnabledColor: Colors.white,
                     style: const TextStyle(color: Colors.white),
