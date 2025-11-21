@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../team/presentation/team_screen.dart';
-import '../../player/controllers/player_controller.dart';
-import '../../../widgets/player_card.dart';
-import '../../../widgets/player_form.dart';
-import '../../../widgets/app_drawer.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../controllers/position_player_controller.dart';
+import '../../../widgets/app_drawer.dart';
+import '../../../widgets/position_player_card.dart';
+import '../../../widgets/position_player_form.dart';
+import 'position_team_screen.dart';
 
-class PlayerListScreen extends ConsumerWidget {
-  const PlayerListScreen({super.key});
+class PositionPlayerListScreen extends ConsumerWidget {
+  const PositionPlayerListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final players = ref.watch(playersProvider);
+    final players = ref.watch(positionPlayersProvider);
 
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Montar Times - Vôlei'),
+        title: const Text('Times por Posição'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -44,7 +44,7 @@ class PlayerListScreen extends ConsumerWidget {
                     );
 
                     if (ok == true) {
-                      ref.read(playersProvider.notifier).clear();
+                      ref.read(positionPlayersProvider.notifier).clear();
                     }
                   },
           ),
@@ -54,23 +54,41 @@ class PlayerListScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const PlayerForm(),
+            const PositionPlayerForm(),
             const SizedBox(height: 12),
             Expanded(
               child: players.isEmpty
-                  ? const Center(
-                      child: Text('Nenhum jogador adicionado.'),
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.sports_volleyball_outlined,
+                            size: 80,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Nenhum jogador adicionado.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   : ListView.builder(
                       itemCount: players.length,
                       itemBuilder: (ctx, i) {
-                        return PlayerCard(player: players[i])
+                        return PositionPlayerCard(player: players[i])
                             .animate()
                             .fadeIn(duration: 250.ms)
                             .slideY(begin: 0.08, curve: Curves.easeOut);
                       },
                     ),
             ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -80,7 +98,8 @@ class PlayerListScreen extends ConsumerWidget {
                         : () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => TeamScreen(teamCount: 2),
+                                builder: (_) =>
+                                    const PositionTeamScreen(teamCount: 2),
                               ),
                             );
                           },
@@ -94,38 +113,26 @@ class PlayerListScreen extends ConsumerWidget {
                     if (players.length >= v) {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => TeamScreen(teamCount: v),
+                          builder: (_) => PositionTeamScreen(teamCount: v),
                         ),
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            'Minimo $v jogadores para $v times',
+                            'Mínimo $v jogadores para $v times',
                           ),
                         ),
                       );
                     }
                   },
                   itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: 2,
-                      child: Text('2 Times'),
-                    ),
-                    PopupMenuItem(
-                      value: 3,
-                      child: Text('3 Times'),
-                    ),
-                    PopupMenuItem(
-                      value: 4,
-                      child: Text('4 Times'),
-                    ),
+                    PopupMenuItem(value: 2, child: Text('2 Times')),
+                    PopupMenuItem(value: 3, child: Text('3 Times')),
+                    PopupMenuItem(value: 4, child: Text('4 Times')),
                   ],
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     child: Icon(Icons.more_vert),
                   ),
                 ),
